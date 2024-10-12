@@ -1,2 +1,2 @@
-# Bank-Statement-Finance-Tracker
-application that categorizes purchases from bank statements and stores them for for basic spending analysis 
+# budget-app-lite
+local full-stack application that categorizes purchases from bank statements (only Wells Fargo for now) and stores them for basic spending analysis 
