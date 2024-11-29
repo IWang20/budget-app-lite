@@ -5,6 +5,7 @@ import os
 import matplotlib as plt
 from sklearn.model_selection import train_test_split
 import re
+import math
 
 """
     Pull from the training data and split it into train/test splits
@@ -31,13 +32,16 @@ def test(testFile: str, model):
             groups = re.findall(r"__label__(.*?) ([a-zA-z ]+)", transaction_text)[0]
             # print(groups)
             actual_label = groups[0]
-            predicted_label, probability = model.predict(groups[1], k=3)
+            labels, probability = model.predict(groups[1], k=3)
+
+            predicted_label = labels[0]
             
-            predicted_label = re.sub("__label__", "", predicted_label[0])
+            predicted_label = re.sub("__label__", "", predicted_label)
             if predicted_label == actual_label:
                 correct += 1
             else:
-                print(f"Incorrect prediction {predicted_label} != {actual_label} in {groups[1]}")
+                prob_format = [f"{i:.9f}" for i in probability]
+                print(f"Incorrect prediction {predicted_label} != {actual_label} in {groups[1]} prediction: {prob_format}")
         accuracy = correct / total
         print(f"{testFile} accuracy is {accuracy}!! Cogrants :3")
 
@@ -49,7 +53,7 @@ def main():
     # split()
     # model = fasttext.train_supervised(input='./data/sample_training.txt',
     #                                 epoch=100, 
-    #                                 lr=0.1, 
+    #                                 lr=0.01, 
     #                                 wordNgrams=3, 
     #                                 verbose=2, 
     #                                 minCount=1,
@@ -61,7 +65,8 @@ def main():
     # model.save_model('./models/budget-0.bin')
     model = fasttext.load_model("./models/budget-0.bin")
 
-    test("./data/sample_test.txt", model)
+    test("./data/sample_training.txt", model)
+    # test("./data/sample_training.txt", model)
     # label, probability = model.predict("Purchase NyxCanteen Portla Tigard OR ", k=3)
     # print(label, probability)
     # model.

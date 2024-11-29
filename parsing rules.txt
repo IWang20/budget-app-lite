@@ -1,0 +1,5 @@
+pypdf behavior: (is it consistent?)
+  - first row is beginning balance
+  - second row is ending balance
+  - [-2] row is ending balance
+  - [-1] row is Standard montly service fee line
