@@ -197,11 +197,6 @@ def clean(text: str):
     #  - [-2] is ending balance
     #  - [-1] is Standard montly service fee line
 
-
-   
-
-    
-
     # text = ""
     # for i in range(len(transactionData['type'])):
         
