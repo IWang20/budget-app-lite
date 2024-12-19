@@ -2,7 +2,7 @@ from pypdf import PdfReader
 from pathlib import Path
 import re
 import pandas as pd
-from pandasgui import show 
+# from pandasgui import show 
 from create_data import write_clean_data
 
 import os
@@ -137,8 +137,12 @@ def extractMisc(transaction: str):
     transaction = re.sub(r"( [ ]+)", " ", removeRef(removeCard(transaction)))
     print(f"-{transaction}-")
     return transaction
-    
 
+def addEntry(date, type, category, amount):
+    transactionData.get("date").append(date)
+    transactionData.get("type").append(type)
+    transactionData.get("category").append(category)
+    transactionData.get("amount").append(amount)
 
 def clean(text: str):
     """
@@ -159,9 +163,6 @@ def clean(text: str):
 
     tPattern = r"(\d{1,2}\/\d{1,2})(.*?) on (\d{2}\/\d{2}) (.*?)(\d{1,}\.\d{2})"
 
-    # what about the amount withdrawn
-    # (\d{1,2}\/\d{1,2})(.*?)(\d{1,},?\d{1,}\.\d{2})
-
     error_count = 0
     transaction_errors = []
     total = 0
@@ -175,20 +176,38 @@ def clean(text: str):
             # {Date} {Type} {Date} {Anything} {Amount}
             extractPattern(segements)
         else:
-            pass
             # Without date in the middle
             # Zelle, Online Transfer, Start/End Date and values
             # some end of dates are being stuck to the price
-            # ((Beginning balance on )?(\d{1,2}\/\d{1,2})\s+\$?([\d{1,},]+\.\d{2}))|((\d{1,2}\/\d{1,2})(.*?)(on)?(\s+\d{2}\/\d{2}\/\d{2}\s+)?(\d{1,}\.\d{2}))
-            # error_count += 1
+            otherPattern = r"(\d{1,2}\/\d{1,2})(.+?)(on)?(\s+\d{2}\/\d{2}\/\d{2}\s+)? (\d{0,},?\d{1,}\.\d{2})"
+            matchstr = re.fullmatch(otherPattern, transactionString)
+            
+            date = None
+            type = None
+            category = None
+            amount = None
+            # else:
+            if matchstr:
+                if matchstr.group(4):
+                    date = matchstr.group(4)
+                else:
+                    date = matchstr.group(1)
+                
+                type = "Bills and Transfers"
+                category = removeNums(removeCard(removeRef(matchstr.group(2))))
+                amount = matchstr.group(5)
+                print(date, type, category, amount)
+                addEntry(date, type, category, amount)
+            # else:
+            #     print(transactionString)
+            # Offer a way for people to enter the data manually
 
-            # Offer a way for people to enter the data manually 
-            # print("Error:", transactionString)
+            # print(segements)
 
 
-    print(f"""Text extraction complete!!\n
-          Total Transactions parsed: {total}\n
-          Error Count: {error_count}""")        
+    # do one pass through just for beginning balances
+
+    print(f"""Text extraction complete!!\nTotal Transactions parsed: {total}\nError Count: {error_count}""")        
             
 
     # pypdf behavior: (is it consistent?)
@@ -221,7 +240,7 @@ def clean(text: str):
 def main():
     clean(stringifyDirs(directory_path))
     df = pd.DataFrame(transactionData)
-    show(df)
+    # show(df)
 
 if __name__ == "__main__":
     main()

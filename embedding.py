@@ -1,6 +1,5 @@
 import fasttext
 import numpy as np
-from typing import List, Union
 import os
 import matplotlib as plt
 from sklearn.model_selection import train_test_split
