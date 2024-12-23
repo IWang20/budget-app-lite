@@ -1,5 +1,6 @@
 import mysql.connector
 from mysql.connector.cursor import MySQLCursorAbstract
+from dateutil import parser
 
 DATABASE = "budget_app"
 TABLE = "transactions"
@@ -23,16 +24,36 @@ def connect(host, user, password):
 
 # root, password
 
+# from dateutil import parser
+
+# # Parse various date formats
+# date1 = parser.parse('12-21-2024')  # MM-DD-YYYY
+# date2 = parser.parse('2024-12-21')  # YYYY-MM-DD
+
+# print(date1.date())  # Output: 2024-12-21
+# print(date2.date())  # Output: 2024-12-21
+
+
 def insertTransactions(connector, cursor: MySQLCursorAbstract, transactionData):
-    print("insertTransaction")
-    # print("Inserting Transaction Data into database...")
-    # print(cursor, transactionData)
-    # sql = f"INSERT INTO {TABLE} (date, type, category, amount) VALUES (?, ?, ?, ?)"
     for i in range(len(transactionData)):
-        print(transactionData[i][0])
+    #     print(transactionData[i][0])
     #     cursor.execute(sql, transactionData[i])
     # cursor.executemany(sql, transactionData)
-    print("Finished inserting data")
+        print(transactionData[i])
+        date = parser.parse(transactionData[i][0])
+        type = transactionData[i][1]
+        category = transactionData[i][2]
+        amount = transactionData[i][3]
+
+        # print(f"Inserting: {date.date()}, {type}, {category}, {amount}")
+        sql = f"INSERT INTO transactions (date, type, category, amount) VALUES (%s, %s, %s, %s);"
+        cursor.execute(sql, (date.date(), type, category, amount))
+    query = f"SELECT COUNT(*) FROM transactions;"
+    cursor.execute(query)
+
+    rows = cursor.fetchone()[0]
+    print(f"Finished inserting data, {rows} transactions inserted")
+    connector.commit()
 
 def setupDatabase(connector, cursor: MySQLCursorAbstract):
     cursor.execute("DROP DATABASE IF EXISTS budget_app")
@@ -43,7 +64,7 @@ def setupDatabase(connector, cursor: MySQLCursorAbstract):
     cursor.execute("""
                     CREATE TABLE IF NOT EXISTS transactions (
                         id INT AUTO_INCREMENT PRIMARY KEY, 
-                        date VARCHAR(100),
+                        date DATE,
                         type VARCHAR(100),
                         category VARCHAR(100),
                         amount FLOAT)

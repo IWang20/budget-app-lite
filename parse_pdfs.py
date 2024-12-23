@@ -105,7 +105,12 @@ def extractPattern(transaction: str, billingPeriod):
     else:
         # ATM, Zelle
         if "ATM" in splitTrans[1]:
-            category = re.findall(r"(.*?\b)(ATM ID.*)", splitTrans[3])
+            # [('4511 Campus Dr Irvine CA  0002392 ', 'ATM ID 9821A Card 1848')]
+            # just take the first of the group list and clean it 
+            category = removeNums(re.findall(r"(.*?\b)(ATM ID.*)", splitTrans[3])[0][0])
+
+            # print(category)
+            # deal with ATM
         elif "Zelle" in splitTrans[1]:
             category = removeNoise(re.sub(r"Ref\s*#\s*\S+", "", splitTrans[3]).strip())
         else:

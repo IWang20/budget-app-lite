@@ -18,7 +18,7 @@ def main():
     connector, cursor = connect(HOST, USER, PASSWORD)
     transactionData = startParse(PDF_DIRECTORY)
     setupDatabase(connector, cursor)
-    # insertTransactions(connector, cursor, transactionData)
+    insertTransactions(connector, cursor, transactionData)
 
 
 
