@@ -4,3 +4,4 @@
 /models
 /node_modules
 /venv
+*:Zone.Identifier

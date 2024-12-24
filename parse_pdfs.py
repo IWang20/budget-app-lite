@@ -11,6 +11,13 @@ import os
 
 directory_path = './pdfs'
 out_file = ''
+state_abbreviations = [
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", 
+    "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", 
+    "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", 
+    "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", 
+    "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+]
 
 # for DataFrame 
 # transactionData = {
@@ -38,22 +45,6 @@ def stringifyPdf(path: str):
         Takes a path to a pdf, OCR the text, and returns it as a string
     """
     pdfStr = ""
-    # for filename in os.listdir(path):
-    #     path = os.path.join(path, filename)
-        # if path[-3:] == "pdf":
-        #     reader = PdfReader(path)
-        #     print("reading", path)
-        #     pages = reader.pages[1:-2]
-        #     temp = ""
-        #     # print(len(pages))
-        #     for page in range(len(pages)):
-        #         # print("Page", page)
-        #         temp += pages[page].extract_text()
-        #         temp = temp.replace('\n', ' ')
-        #         pdfStr += temp
-    
-    # path = "./pdfs/010824 WellsFargo.pdf"
-
     reader = PdfReader(path)
     print("reading", path)
     pages = reader.pages[0:-1]
@@ -64,15 +55,7 @@ def stringifyPdf(path: str):
     
     return pdfStr
 
-def removeNoise(text: str):
-    """
-        Removes numbers, lone characters, extra spaces 
-    """
-    patterns = [(r"[0-9#*-]+", ""), (r"( [A-Za-z] )|  ", " "), (r"( [ ]+)", " ")]
-    temp = text
-    for remove_pattern, sub in patterns:
-        temp = re.sub(remove_pattern, sub, temp)
-    return temp
+
 
 def extractPattern(transaction: str, billingPeriod):
     """
@@ -88,7 +71,6 @@ def extractPattern(transaction: str, billingPeriod):
     splitTrans[1] = splitTrans[1].strip()
     splitTrans[-2] = splitTrans[-2].strip()
     
-    # print(splitTrans[2])
     date = assignYear(splitTrans[2], billingPeriod)
 
     # remove "authorized" if there is one in the string
@@ -117,7 +99,7 @@ def extractPattern(transaction: str, billingPeriod):
             # Error: Albertsons #0597 Irvine CA S624065475280122 Card
             print(f"Extract Error: {splitTrans[3]}")
 
-        if splitTrans[3] == "":
+        if category == "":
             category = "personal"
     
     amount = splitTrans[4]
@@ -139,25 +121,68 @@ def extractOtherPattern(transaction: str, billingPeriod):
     amount = None
 
     if matchstr:
-        if matchstr.group(4):
+        if matchstr.group(4): 
             date = matchstr.group(4)
         else:
             date = assignYear(matchstr.group(1), billingPeriod)
         
         type = "Bills and Transfers"
-        category = removeNums(removeCard(removeRef(matchstr.group(2))))
+        category = removeNoise2(matchstr.group(2))
         amount = matchstr.group(5)
         # print(date, type, category, amount)
     return date, type, category, amount
 
 def removeRef(text: str):
+    """
+        removes transaction reference number
+    """
     return re.sub(r"Ref\s*#\s*\S+", "", text).strip()
 
 def removeCard(text: str):
     return re.sub(r"xxxxxx\d{4}", "", text)
 
 def removeNums(text: str):
-    return re.sub(r"( \d+ \d+)|( \d+ )", "", text)
+    return re.sub(r"( \d+ \d+)|( \d+ )", " ", text)
+
+def removeState(text: str):
+    return re.sub(r"AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY", "", text)
+
+def removeExtraSpace(text: str):
+    return re.sub(r"( [ ]+)", " ", text)
+
+def removeIdentifiers(text: str):
+    """
+        begin with a hash, phone numbers, consecutive numbers
+        
+    """
+    return re.sub(r"[0-9#*-]+", "", text)
+
+def removeDate(text: str):
+    """
+        removes 'on {date}' 
+    """
+    return re.sub(r" on \d{1,}\/\d{2}\/\d{2}", "", text)
+
+def removeNoise(text: str):
+    """
+        Removes numbers, card #, ref #, state, identifiers, extra space 
+    """
+    removeFunc = [removeNums, removeCard, removeRef, removeState, removeIdentifiers, removeExtraSpace]
+    temp = text
+    for func in removeFunc:
+        temp = func(temp)
+    return temp
+
+def removeNoise2(text: str):
+    """
+        Removes numbers, card #, ref #, state, extra space (no identifiers)
+    """
+    removeFunc = [removeNums, removeCard, removeRef, removeState, removeDate, removeExtraSpace]
+    temp = text
+    for func in removeFunc:
+        temp = func(temp)
+    # print(temp)
+    return temp
 
 def toFloat(amount):
     if "," in amount:
@@ -273,8 +298,8 @@ def getBillingData(text: str):
 
 def startParse(pdfDir: str):
     """
-        takes a path to a directory of pdfs, grabs the text, cleans it for billing and transaction information, and then adds it all into the same list
-        returns a list containing every transaction
+        takes a path to a directory of pdfs, grabs the text, cleans it for billing and transaction information, and then adds it all into the same list\n
+        returns a list containing every transaction: (date, type, category, amount)
     """
     total = 0
     added = 0
@@ -301,7 +326,7 @@ def startParse(pdfDir: str):
 
         data.append(temp_data)
 
-    print(f"\n{len(data)} PDFs scanned, {total} items parsed, {added} ransactions added")
+    print(f"\n{len(data)} PDFs scanned, {total} items parsed, {added} transactions added")
 
     return transactionData
     

@@ -22,17 +22,6 @@ def connect(host, user, password):
 
     return mydb, cursor
 
-# root, password
-
-# from dateutil import parser
-
-# # Parse various date formats
-# date1 = parser.parse('12-21-2024')  # MM-DD-YYYY
-# date2 = parser.parse('2024-12-21')  # YYYY-MM-DD
-
-# print(date1.date())  # Output: 2024-12-21
-# print(date2.date())  # Output: 2024-12-21
-
 
 def insertTransactions(connector, cursor: MySQLCursorAbstract, transactionData):
     for i in range(len(transactionData)):

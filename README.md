@@ -8,3 +8,10 @@ local full-stack application that categorizes purchases from bank statements (on
 
 # notes on the model
 * fasttext doesn't consider "Wendy's" to be a restaurant/fast food it thinks its a person and I don't know how to fix it lol
+* has high variance (repeats in training data, poor validation accuracy)
+
+# how to run
+* import modules in requirements
+* make sure mysql is running
+* put the billing statements (.pdf) in /pdfs
+* run start.py with your mysql credentials
