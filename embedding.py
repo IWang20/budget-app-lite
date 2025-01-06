@@ -19,18 +19,18 @@ def split(inFile: str, trainFile: str, testFile: str):
         train_file.writelines(train_data)
         test_file.writelines(test_data)
 
-"""
-    take a labeled set and a model and makes predictions to see if they are correct 
-"""
-def test(testFile: str, model):
-    
-    with open(f'{testFile}') as file:
+
+def test_pred(testFile: str, model):
+    """
+        take a labeled file and a model, checks predictions to see if they are correct 
+    """
+    with open(f'./data/{testFile}') as file:
         data = file.readlines()
         correct = 0
         total = len(data)
         accuracy = 0
         for transaction_text in data:
-            groups = re.findall(r"__label__(.*?) ([a-zA-z ]+)", transaction_text)[0]
+            groups = re.findall(r"__label__(.*?) (.*?)\n", transaction_text)[0]
             # print(groups)
             actual_label = groups[0]
             labels, probability = model.predict(groups[1], k=3)
@@ -42,21 +42,21 @@ def test(testFile: str, model):
                 correct += 1
             else:
                 prob_format = [f"{i:.9f}" for i in probability]
-                print(f"Incorrect prediction {predicted_label} != {actual_label} in {groups[1]} prediction: {prob_format}")
+                print(f"Incorrect prediction {predicted_label} != {actual_label} in | {groups} | prediction: {prob_format}")
         accuracy = correct / total
-        print(f"{testFile} accuracy is {accuracy}!! Cogrants :3")
+        print(f"{testFile} accuracy is {accuracy}!! Congrats :3")
 
 
 def train(inStr: str, outStr: str):
     model = fasttext.train_supervised(input=f'./data/{inStr}',
                                     epoch=100, 
-                                    lr=0.01, 
+                                    lr=0.1, 
                                     wordNgrams=3, 
                                     verbose=2, 
                                     minCount=1,
-                                    dim = 300,
-                                    neg = 10,
-                                    ws = 5,
+                                    dim=300,
+                                    neg=10,
+                                    ws=5,
                                     loss='softmax',
                                     pretrainedVectors='./data/wiki-news-300d-1M.vec')
     model.save_model(f'./models/{outStr}')
