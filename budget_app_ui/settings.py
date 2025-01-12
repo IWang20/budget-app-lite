@@ -38,9 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'rest_framework',
+    'test_data',
+    'transaction',
+    'upload_pdf'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -48,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'budget_app_ui.urls'
@@ -77,9 +84,10 @@ WSGI_APPLICATION = 'budget_app_ui.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
+        'NAME': constants.DATABASE,
         'HOST': constants.HOST,
         'USER': constants.USER,
-        'PASSWORD': constants.PASSWORD
+        'PASSWORD': constants.PASSWORD,
     }
 }
 
@@ -124,3 +132,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CORS_ORIGIN_WHITELIST = [
+#      'http://localhost:3000'
+# ]
+
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",  # React frontend origin
+# ]
+
+CORS_ALLOW_ALL_ORIGINS = True

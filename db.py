@@ -31,12 +31,14 @@ def insertTransactions(connector, cursor: MySQLCursorAbstract, transactionData):
         print(transactionData[i])
         date = parser.parse(transactionData[i][0])
         type = transactionData[i][1]
-        category = transactionData[i][2]
+        description = transactionData[i][2]
         amount = transactionData[i][3]
 
         # print(f"Inserting: {date.date()}, {type}, {category}, {amount}")
-        sql = f"INSERT INTO transactions (date, type, category, amount) VALUES (%s, %s, %s, %s);"
-        cursor.execute(sql, (date.date(), type, category, amount))
+
+        # FIX INSERT 
+        sql = f"INSERT INTO transactions (date, type, description, amount) VALUES (%s, %s, %s, %s);"
+        cursor.execute(sql, (date.date(), type, description, amount))
     query = f"SELECT COUNT(*) FROM transactions;"
     cursor.execute(query)
 
@@ -55,7 +57,8 @@ def setupDatabase(connector, cursor: MySQLCursorAbstract):
                         id INT AUTO_INCREMENT PRIMARY KEY, 
                         date DATE,
                         type VARCHAR(100),
-                        category VARCHAR(100),
+                        description VARCHAR(100),
+                        category VARCHAR(100) DEFAULT NULL,
                         amount FLOAT)
                     """)
     print("Created transactions table")

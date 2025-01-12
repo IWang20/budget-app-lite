@@ -15,8 +15,16 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
+import transaction.views
+from upload_pdf.views import upload_pdf
+
+router = routers.DefaultRouter()
+router.register(r'transaction', transaction.views.TransactionView, 'transaction')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path("api/", include(router.urls)),
+    path("upload_pdf/", upload_pdf, name="upload_pdf")
 ]

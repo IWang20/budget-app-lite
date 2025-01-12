@@ -191,21 +191,21 @@ def toFloat(amount):
         return float(amount)
 
 # for Dataframe
-def addEntryData(date, type, category, amount):
-    """
-        Add entry to transactionData in DataFrame format
-    """
-    transactionData.get("date").append(date)
-    transactionData.get("type").append(type)
-    transactionData.get("category").append(category)
-    transactionData.get("amount").append(amount)
+# def addEntryData(date, type, category, amount):
+#     """
+#         Add entry to transactionData in DataFrame format
+#     """
+#     transactionData.get("date").append(date)
+#     transactionData.get("type").append(type)
+#     transactionData.get("category").append(category)
+#     transactionData.get("amount").append(amount)
 
-def addEntryStatement(date: str, type: str, category: str, amount: float):
+def addEntryStatement(date: str, type: str, description: str, amount: float):
     """
         Add entry to transactionData in multiple row format
     """
     # print(f"Adding {tuple([date, type, category, amount])}")
-    transactionData.append(tuple([date, type, category, amount]))
+    transactionData.append(tuple([date, type, description, amount]))
 
 def assignYear(date, billingPeriod):
     """
@@ -255,20 +255,20 @@ def clean(text: str, billingPeriod):
 
         date = None
         type = None
-        category = None
+        description = None
         amount = None
 
         if segements:
-            date, type, category, amount = extractPattern(segements, billingPeriod)
+            date, type, description, amount = extractPattern(segements, billingPeriod)
         else:
-            date, type, category, amount = extractOtherPattern(transactionString, billingPeriod)
+            date, type, description, amount = extractOtherPattern(transactionString, billingPeriod)
         
 
         # check if returned strings are valid
-        if all([True if i is not None else False for i in [date, type, category, amount]]):
+        if all([True if i is not None else False for i in [date, type, description, amount]]):
             added += 1
             amount = toFloat(amount)
-            addEntryStatement(date, type, category, amount)
+            addEntryStatement(date, type, description, amount)
         else:
             # print(f"clean() Error '{transactionString}': {date}, {type}, {category}, {amount}")
             pass
