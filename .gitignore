@@ -1,7 +1,7 @@
-/pdfs
-/data
-/__pycache__
-/models
+/pdfs/**
+/data/**
+**/__pycache__
+/models/**
 /node_modules
 /venv
 *:Zone.Identifier
