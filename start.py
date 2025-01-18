@@ -8,8 +8,7 @@ USER = "budget-app"
 PASSWORD = "password"
 
 
-# get the formatted dictionary 
-# call db on formatted dictionary 
+# FIX!!!! START PARSE DOESN'T RETURN A LIST ANYMORE 
 
 
 def main():

@@ -40,7 +40,7 @@ transactionData = []
 data = []
 
 
-def stringifyPdf(path: str):
+def stringifyPdf(path):
     """
         Takes a path to a pdf, OCR the text, and returns it as a string
     """
@@ -238,6 +238,7 @@ def clean(text: str, billingPeriod):
         - ********** ***** Rent769.00
         - Ref #********* on 12/10/2350.00 101.44
     """
+    cleanedTransactions = []
 
     pattern = r"(Beginning balance on )?(\d{1,2}\/\d{1,2})(.*?)(\d{1,2}\/\d{1,2})?(.*?)(\d{1,}\.\d{2})"
     # finditer instead of findmatch() so it returns the captured string and not the groups
@@ -268,7 +269,7 @@ def clean(text: str, billingPeriod):
         if all([True if i is not None else False for i in [date, type, description, amount]]):
             added += 1
             amount = toFloat(amount)
-            addEntryStatement(date, type, description, amount)
+            cleanedTransactions.append(tuple([date, type, description, amount]))
         else:
             # print(f"clean() Error '{transactionString}': {date}, {type}, {category}, {amount}")
             pass
@@ -277,7 +278,7 @@ def clean(text: str, billingPeriod):
     print(f"Total items parsed: {total}\nAmount of transactions added: {added}")
     print("")
 
-    return total, added
+    return cleanedTransactions, total, added
 
 def getBillingData(text: str):
     """
@@ -295,8 +296,34 @@ def getBillingData(text: str):
     return startMatch, endMatch, yearMatch[0]
 
 
+def processText(text):
+    """
+        Given a stream of text for a PDF, extract start/end date, balance, and transactions
+    """
+    begBalance, endBalance, feePeriod = getBillingData(text)
 
-def startParse(pdfDir: str):
+    temp_data = {}
+    
+    temp_data["startDate"] = feePeriod[0]
+    temp_data["endDate"] = feePeriod[1]
+    temp_data["beginningBalance"] = toFloat(begBalance[2])
+    temp_data["endingBalance"] = toFloat(endBalance[2])
+
+    transactions, pdf_total, pdf_added = clean(text, feePeriod)
+    temp_data["totalTransactions"] = pdf_added
+    temp_data["transactions"] = transactions
+    return temp_data, pdf_total, pdf_added
+
+
+def parseFile(file):
+    """
+        takes a byte stream/file object to parse, returns data, total # of transactions, added # of transactions to data
+    """
+    text = stringifyPdf(file)
+    temp_data, pdf_total, pdf_added = processText(text)
+    return temp_data, pdf_total, pdf_added
+
+def parseDir(pdfDir: str):
     """
         takes a path to a directory of pdfs, grabs the text, cleans it for billing and transaction information, and then adds it all into the same list\n
         returns a list containing every transaction: (date, type, category, amount)
@@ -308,19 +335,8 @@ def startParse(pdfDir: str):
         path = os.path.join(pdfDir, filename)
 
         text = stringifyPdf(path)
-        begBalance, endBalance, feePeriod = getBillingData(text)
-
-        temp_data = {}
+        temp_data, pdf_total, pdf_added = processText(text)
         
-        temp_data["startDate"] = feePeriod[0]
-        temp_data["endDate"] = feePeriod[1]
-        temp_data["beginningBalance"] = toFloat(begBalance[2])
-        temp_data["endingBalance"] = toFloat(endBalance[2])
-
-        pdf_total, pdf_added  = clean(text, feePeriod)
-
-        temp_data["transactions"] = pdf_added
-
         total += pdf_total
         added += pdf_added
 
@@ -362,7 +378,7 @@ def startParse(pdfDir: str):
 
 def main():
     # clean(stringifyPdf(directory_path))
-    startParse(directory_path)
+    parseDir(directory_path)
     # df = pd.DataFrame(transactionData)
     # show(df)
     toFloat("12,002,010.45")
