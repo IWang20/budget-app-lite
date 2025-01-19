@@ -1,24 +1,3 @@
-
-
-// const transactions = [
-//   {
-//       "id": 1,
-//       "date": "2025-01-09",
-//       "type": "django test",
-//       "description": "up' down left right # z",
-//       "category": "groceries",
-//       "amount": 1000.0
-//   },
-//   { 
-//     "id": 2,
-//     "date": "2025-01-10",
-//     "type": "django test 2",
-//     "description": "awerhjawoeurh aiue ",
-//     "category": "rent",
-//     "amount": 1000.0
-//   },
-// ]
-
 import {React, useState} from 'react';
 import axios from "axios";
 import './App.css'
@@ -29,6 +8,7 @@ const App = () => {
   const [month, setMonth] = useState("");
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState();
+
 
 
   const onFileChange = (event) => {
@@ -56,32 +36,41 @@ const App = () => {
     // this.setState({transactions: response.data});
   };
 
-  const onTransactionSubmit = async(event) => {
+  const onTransactionSubmit = (event) => {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
-    console.log(formData);
-
-    const jsonObject = {};
-    const transactionSelections = [];
 
     // Iterate over the transactions
     transactions.forEach((_, index) => {
         // Find the selected radio button for this transaction index
+        const jsonObject = {};
         const selectedOption = document.querySelector(`input[name="${index}"]:checked`);
 
         if (selectedOption) {
             // Add the index and selected option value to the array
-            transactionSelections.push({
-                index: index,
-                selection: selectedOption.id, // You can also use `selectedOption.value` if `value` is defined
-                transaction: _
-            });
+            // transactionSelections.push({
+            //     index: index,
+            //     selection: selectedOption.id, // You can also use `selectedOption.value` if `value` is defined
+            //     transaction: _
+            // });
+            const transaction = _;
+            jsonObject["date"] = transaction[0];
+            console.log(jsonObject["date"]);
+            jsonObject["type"] = transaction[1];
+            jsonObject["description"] = transaction[2];
+            jsonObject["category"] = selectedOption.id;
+            jsonObject["amount"] = transaction[3]
+            const response = axios.post("http://localhost:8000/api/transaction/", jsonObject, {headers: {"Content-Type": "application/json"}});
+            console.log(response);
         }
     });
 
-    jsonObject["transactionData"] = transactionSelections;
-    console.log(jsonObject);
+    // jsonObject["transactionData"] = transactionSelections;
+    // console.log(jsonObject);
+    // const test = {"date": "2001-02-01", "type": "typeTest", "description":"testDescription", "category":"testCategory", "amount":30.1};
+    
+    // console.log(response["data"]);
     // jsonObject[]
     
 
@@ -107,10 +96,12 @@ const App = () => {
                     <h3>{transaction[1]} {transaction[2]}</h3>
                   </div>
                   <div class="col">
-                    <input type="radio" id="test1" name={index}/>
-                    <label htmlFor="test1">test1</label>
-                    <input type="radio" id="test2" name={index}/>
-                    <label htmlFor="test2">test2</label>
+                    <label>
+                      <input type="radio" id="test1" name={index}/> test1
+                    </label>
+                    <label>
+                      <input type="radio" id="test2" name={index}/> test2
+                    </label>
                   </div>
                 </div>
               )

@@ -71,7 +71,7 @@ def extractPattern(transaction: str, billingPeriod):
     splitTrans[1] = splitTrans[1].strip()
     splitTrans[-2] = splitTrans[-2].strip()
     
-    date = assignYear(splitTrans[2], billingPeriod)
+    date = convertDateFormat(assignYear(splitTrans[2], billingPeriod))
 
     # remove "authorized" if there is one in the string
     tempType = splitTrans[1].split()
@@ -122,9 +122,9 @@ def extractOtherPattern(transaction: str, billingPeriod):
 
     if matchstr:
         if matchstr.group(4): 
-            date = matchstr.group(4)
+            date = convertDateFormat(matchstr.group(4))
         else:
-            date = assignYear(matchstr.group(1), billingPeriod)
+            date = convertDateFormat(assignYear(matchstr.group(1), billingPeriod))
         
         type = "Bills and Transfers"
         category = removeNoise2(matchstr.group(2))
@@ -222,6 +222,12 @@ def assignYear(date, billingPeriod):
         return start[2] + "/" + date
     else:
         return end[2] + "/" + date
+
+def convertDateFormat(date: str):
+    """
+        Change a YYYY/MM/DD to YYYY-MM-DD for MySQL 
+    """
+    return date.replace("/", "-")
 
 
 def clean(text: str, billingPeriod):
