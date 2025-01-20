@@ -36,44 +36,51 @@ const App = () => {
     // this.setState({transactions: response.data});
   };
 
+  const sendTransaction = async(jsonObject) => {
+    const response = await axios.post("http://localhost:8000/api/transaction/", jsonObject, {headers: {"Content-Type": "application/json"}});
+    // console.log(response);
+  };
+
+  const unCheckAll = () => {
+    const radios = document.querySelectorAll("input[type='radio']");
+    radios.forEach((input) => {
+      input.checked = false; // Uncheck all inputs
+    });
+  };
+
   const onTransactionSubmit = (event) => {
     event.preventDefault();
     const form = event.target;
     const formData = new FormData(form);
 
+    const selectedTransactions = new Set();
+
+
     // Iterate over the transactions
-    transactions.forEach((_, index) => {
+    transactions.forEach((transaction, index) => {
         // Find the selected radio button for this transaction index
         const jsonObject = {};
         const selectedOption = document.querySelector(`input[name="${index}"]:checked`);
 
         if (selectedOption) {
-            // Add the index and selected option value to the array
-            // transactionSelections.push({
-            //     index: index,
-            //     selection: selectedOption.id, // You can also use `selectedOption.value` if `value` is defined
-            //     transaction: _
-            // });
-            const transaction = _;
+            // const transaction = _;
             jsonObject["date"] = transaction[0];
             console.log(jsonObject["date"]);
             jsonObject["type"] = transaction[1];
             jsonObject["description"] = transaction[2];
             jsonObject["category"] = selectedOption.id;
-            jsonObject["amount"] = transaction[3]
-            const response = axios.post("http://localhost:8000/api/transaction/", jsonObject, {headers: {"Content-Type": "application/json"}});
-            console.log(response);
+            jsonObject["amount"] = transaction[3];
+            sendTransaction(jsonObject);
+            // console.log(index);
+            selectedTransactions.add(transaction);
         }
     });
 
-    // jsonObject["transactionData"] = transactionSelections;
-    // console.log(jsonObject);
-    // const test = {"date": "2001-02-01", "type": "typeTest", "description":"testDescription", "category":"testCategory", "amount":30.1};
-    
-    // console.log(response["data"]);
-    // jsonObject[]
-    
-
+    console.log(selectedTransactions);
+    setTransactions((items) => items.filter((t) => !(selectedTransactions.has(t))));
+    console.log(transactions);
+    unCheckAll();
+    // selectedTransactions.clear();
   };
 
 
