@@ -31,4 +31,4 @@ def upload_pdf(request: HttpRequest):
         return JsonResponse({"status": "File Uploaded", "transactions": transactions})
     else:
         form = UploadFileForm()
-    return JsonResponse({"status": "Error", "transactions": []})
+    return JsonResponse({"status": "Error, not a valid POST to /upload_pdf", "transactions": []})

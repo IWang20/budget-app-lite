@@ -44,7 +44,7 @@ const App = () => {
   const unCheckAll = () => {
     const radios = document.querySelectorAll("input[type='radio']");
     radios.forEach((input) => {
-      input.checked = false; // Uncheck all inputs
+      input.checked = false;
     });
   };
 
@@ -55,10 +55,7 @@ const App = () => {
 
     const selectedTransactions = new Set();
 
-
-    // Iterate over the transactions
     transactions.forEach((transaction, index) => {
-        // Find the selected radio button for this transaction index
         const jsonObject = {};
         const selectedOption = document.querySelector(`input[name="${index}"]:checked`);
 
@@ -98,7 +95,7 @@ const App = () => {
           {
             transactions.map((transaction, index) => {
               return (
-                <div class="flex-grid" key={index}> 
+                <div class="flex-grid" key={index}>
                   <div class="col">
                     <h3>{transaction[1]} {transaction[2]}</h3>
                   </div>
@@ -112,7 +109,6 @@ const App = () => {
                   </div>
                 </div>
               )
-              // return <li key={index}>{transaction[1]} {transaction[2]}</li>
             })
           }
           <button type="submit">Submit</button>
