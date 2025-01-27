@@ -5,11 +5,26 @@ from .forms import UploadFileForm
 from pypdf import PdfReader
 from django.views.decorators.csrf import csrf_exempt
 from parse_pdfs import parseFile
+from db import connect
+import constants
+from mysql.connector.cursor import MySQLCursorAbstract
+from dateutil import parser
 
-# Create your views here.
+
+def insert_fee_period(connector, cursor: MySQLCursorAbstract, data):
+    connector.database = constants.DATABASE
+    sql = f"INSERT INTO upload_pdf_months (start_date, end_date, beginning_balance, ending_balance) VALUES (%s, %s, %s, %s)"
+    cursor.execute(sql, (parser.parse(data["startDate"]).date(), parser.parse(data["endDate"]).date(), data["beginningBalance"], data["endingBalance"]))
+
+    print(f"Inserted Period {data['startDate']} - {data['endDate']}")
+    connector.commit()
 
 def handle_uploaded_pdf(f):
     pdf_data, total, added = parseFile(f)
+    
+    connector, cursor = connect(constants.HOST, constants.USER, constants.PASSWORD)
+    insert_fee_period(connector, cursor, pdf_data)
+
 
     print(f"{pdf_data['startDate']} - {pdf_data['endDate']} : {total} transactions, {added} transactions added")
     # print(f"{pdf_data["startDate"]}")
@@ -19,15 +34,10 @@ def handle_uploaded_pdf(f):
 @csrf_exempt
 def upload_pdf(request: HttpRequest):
     if request.method == "POST":
-        # form = UploadFileForm(request.POST, request.FILES)
-        # print(f"POST -- {request.POST}, {request.FILES}, {request.content_type}\nForm: {form.file}")
-        # if form.is_valid():
-        #     handle_uploaded_pdf(request.FILES["file"])
-        #     return HttpResponse("success")
-        # else:
-        #     return HttpResponse("invalid form")
+        
+
         transactions = handle_uploaded_pdf(request.FILES["pdf"])
-        print(transactions)
+        # print(transactions)
         return JsonResponse({"status": "File Uploaded", "transactions": transactions})
     else:
         form = UploadFileForm()
