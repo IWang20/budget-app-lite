@@ -7,7 +7,7 @@ TABLE = "transactions"
 
 
 def connect(host, user, password):
-    print("Connecting to Host: {host} Database: transactions")
+    print("Connecting to Host: {host} Database: budget-app")
     mydb = mysql.connector.connect(
         host=host,
         user=user,
@@ -16,9 +16,9 @@ def connect(host, user, password):
     cursor = mydb.cursor()
 
     if not mydb:
-        print("Error: Did not connect to MySql")
+        print("Error: Did not connect to MySQL")
     else:
-        print("Successfully connected to MySql")
+        print("Successfully connected to MySQL")
 
     return mydb, cursor
 

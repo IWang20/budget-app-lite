@@ -19,6 +19,7 @@ from django.urls import path, include
 from rest_framework import routers
 import transaction.views
 from upload_pdf.views import upload_pdf
+import analysis.views
 
 router = routers.DefaultRouter()
 router.register(r'transaction', transaction.views.TransactionView, 'transaction')
@@ -26,5 +27,6 @@ router.register(r'transaction', transaction.views.TransactionView, 'transaction'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include(router.urls)),
-    path("upload_pdf/", upload_pdf, name="upload_pdf")
+    path("upload_pdf/", upload_pdf, name="upload_pdf"),
+    path("analysis/", analysis.views.get_analysis, name="analysis")
 ]

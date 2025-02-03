@@ -6,7 +6,7 @@ import pandas as pd
 from write_data import write_clean_data
 from datetime import datetime
 from dateutil import parser
-
+import geonamescache
 import os
 
 directory_path = './pdfs'
@@ -18,25 +18,9 @@ state_abbreviations = [
     "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", 
     "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
 ]
+cities = set(pd.read_csv('./data/uscities.csv')["city"].tolist())
 
-# for DataFrame 
-# transactionData = {
-#     "date": [],
-#     "type": [],
-#     "category": [],
-#     "amount": []
-# }
-
-# for MySQL .executemany() multiple-row syntax
 transactionData = []
-
-# data = {
-#     "startDate": "",
-#     "endDate": "",
-#     "beginningBalance": 0.0,
-#     "endingBalance": 0.0,
-#     "transactions": None
-# }
 data = []
 
 
@@ -63,7 +47,7 @@ def extractPattern(transaction: str, billingPeriod):
     """
     date = None
     type = None
-    category = None
+    description = None
     amount = None
     
     splitTrans = list(transaction[0])
@@ -81,30 +65,30 @@ def extractPattern(transaction: str, billingPeriod):
         type = " ".join(tempType)
 
     catPattern = r"(.*?\b)  ?(?:[S|P]\d+ Card 1848)"
-    cleanCategory = re.findall(catPattern, splitTrans[3])
-    if cleanCategory:
-        category = removeNoise(cleanCategory[0])
+    cleanDescription = re.findall(catPattern, splitTrans[3])
+    if cleanDescription:
+        description = removeNoise(cleanDescription[0])
     else:
         # ATM, Zelle
         if "ATM" in splitTrans[1]:
             # [('4511 Campus Dr Irvine CA  0002392 ', 'ATM ID 9821A Card 1848')]
             # just take the first of the group list and clean it 
-            category = removeNums(re.findall(r"(.*?\b)(ATM ID.*)", splitTrans[3])[0][0])
+            description = removeNums(re.findall(r"(.*?\b)(ATM ID.*)", splitTrans[3])[0][0])
 
-            # print(category)
+            # print(description)
             # deal with ATM
         elif "Zelle" in splitTrans[1]:
-            category = removeNoise(re.sub(r"Ref\s*#\s*\S+", "", splitTrans[3]).strip())
+            description = removeNoise(re.sub(r"Ref\s*#\s*\S+", "", splitTrans[3]).strip())
         else:
             # Error: Albertsons #0597 Irvine CA S624065475280122 Card
             print(f"Extract Error: {splitTrans[3]}")
 
-        if category == "":
-            category = "personal"
+        if description == "":
+            description = "personal"
     
     amount = splitTrans[4]
 
-    return date, type, category, amount
+    return date, type, description, amount
 
 
 
@@ -117,7 +101,7 @@ def extractOtherPattern(transaction: str, billingPeriod):
     
     date = None
     type = None
-    category = None
+    description = None
     amount = None
 
     if matchstr:
@@ -127,10 +111,12 @@ def extractOtherPattern(transaction: str, billingPeriod):
             date = convertDateFormat(assignYear(matchstr.group(1), billingPeriod))
         
         type = "Bills and Transfers"
-        category = removeNoise2(matchstr.group(2))
+        description = removeNoise2(matchstr.group(2))
         amount = matchstr.group(5)
-        # print(date, type, category, amount)
-    return date, type, category, amount
+        # print(date, type, description, amount)
+    else:
+        print(f"extractOtherPattern() Error: '{transaction}'")
+    return date, type, description, amount
 
 def removeRef(text: str):
     """
@@ -146,6 +132,12 @@ def removeNums(text: str):
 
 def removeState(text: str):
     return re.sub(r"AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY", "", text)
+
+# def removeCity(text: str):
+#     words = text.split()
+#     ret = " ".join([word for word in words if word not in cities])
+
+#     return ret
 
 def removeExtraSpace(text: str):
     return re.sub(r"( [ ]+)", " ", text)
@@ -190,21 +182,11 @@ def toFloat(amount):
     else:
         return float(amount)
 
-# for Dataframe
-# def addEntryData(date, type, category, amount):
-#     """
-#         Add entry to transactionData in DataFrame format
-#     """
-#     transactionData.get("date").append(date)
-#     transactionData.get("type").append(type)
-#     transactionData.get("category").append(category)
-#     transactionData.get("amount").append(amount)
-
 def addEntryStatement(date: str, type: str, description: str, amount: float):
     """
         Add entry to transactionData in multiple row format
     """
-    # print(f"Adding {tuple([date, type, category, amount])}")
+    # print(f"Adding {tuple([date, type, description, amount])}")
     transactionData.append(tuple([date, type, description, amount]))
 
 def assignYear(date, billingPeriod):
@@ -275,9 +257,10 @@ def clean(text: str, billingPeriod):
         if all([True if i is not None else False for i in [date, type, description, amount]]):
             added += 1
             amount = toFloat(amount)
+            # print(description)
             cleanedTransactions.append(tuple([date, type, description, amount]))
         else:
-            # print(f"clean() Error '{transactionString}': {date}, {type}, {category}, {amount}")
+            print(f"clean() Error '{transactionString}': {date}, {type}, {amount}")
             pass
 
 
@@ -332,7 +315,7 @@ def parseFile(file):
 def parseDir(pdfDir: str):
     """
         takes a path to a directory of pdfs, grabs the text, cleans it for billing and transaction information, and then adds it all into the same list\n
-        returns a list containing every transaction: (date, type, category, amount)
+        returns a list containing every transaction: (date, type, description, amount)
     """
     total = 0
     added = 0
@@ -363,7 +346,7 @@ def parseDir(pdfDir: str):
     text = ""
     for i in range(len(transactionData['type'])):
         
-        temp = f"{transactionData['type'][i]} {transactionData['category'][i]}\n"
+        temp = f"{transactionData['type'][i]} {transactionData['description'][i]}\n"
         text += temp
 
     clean the text
@@ -384,10 +367,13 @@ def parseDir(pdfDir: str):
 
 def main():
     # clean(stringifyPdf(directory_path))
-    parseDir(directory_path)
+    data, _, _ = parseFile("./pdfs/010824 WellsFargo.pdf")
+
+
     # df = pd.DataFrame(transactionData)
     # show(df)
-    toFloat("12,002,010.45")
+    # toFloat("12,002,010.45")
+    # print(removeCity("Purchase authorized on 01/04 Daves Hot Chicken Beaverton OR S384004778005043 Card 1848"))
 
 if __name__ == "__main__":
     main()

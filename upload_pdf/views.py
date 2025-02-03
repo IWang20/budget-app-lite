@@ -13,8 +13,8 @@ from dateutil import parser
 
 def insert_fee_period(connector, cursor: MySQLCursorAbstract, data):
     connector.database = constants.DATABASE
-    sql = f"INSERT INTO upload_pdf_months (start_date, end_date, beginning_balance, ending_balance) VALUES (%s, %s, %s, %s)"
-    cursor.execute(sql, (parser.parse(data["startDate"]).date(), parser.parse(data["endDate"]).date(), data["beginningBalance"], data["endingBalance"]))
+    sql = f"INSERT INTO upload_pdf_months (year, start_date, end_date, beginning_balance, ending_balance) VALUES (%s, %s, %s, %s, %s)"
+    cursor.execute(sql, (parser.parse(data["startDate"]).year, parser.parse(data["startDate"]).date(), parser.parse(data["endDate"]).date(), data["beginningBalance"], data["endingBalance"]))
 
     print(f"Inserted Period {data['startDate']} - {data['endDate']}")
     connector.commit()
@@ -34,8 +34,6 @@ def handle_uploaded_pdf(f):
 @csrf_exempt
 def upload_pdf(request: HttpRequest):
     if request.method == "POST":
-        
-
         transactions = handle_uploaded_pdf(request.FILES["pdf"])
         # print(transactions)
         return JsonResponse({"status": "File Uploaded", "transactions": transactions})
