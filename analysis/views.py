@@ -74,7 +74,9 @@ def get_transactions_year(connector, cursor: MySQLCursorAbstract, year: int):
         month_data = {}
 
         month_data["month"] = num_to_month[month]
-        month_data["transactions"] = grouped_transactions
+        # month_data["transactions"] = grouped_transactions
+        for k in grouped_transactions:
+            month_data[k] = grouped_transactions[k]
         print(month_data)
         if str(year) not in year_data.keys():
             year_data[str(year)] = [month_data]
