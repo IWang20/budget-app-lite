@@ -55,19 +55,27 @@ def group(transaction_data):
 
 
 def get_transactions_year(connector, cursor: MySQLCursorAbstract, year: int):
-    year_data = {
-    }
+    year_data = {}
 
     # for id, startDate, endDate, startAmount, endAmount, dateYear in data:
     # start_date = f"{year}-01-01"
     # end_date = f"{year}-12-31"
+    # if year < 0:
+    #     sql = f"SELECT * FROM transaction_transaction LIMIT 25"
+    #     for month in range(1, 13):
+    # else:
     for month in range(1, 13):
         start_date = f'{year}-{month}-01'
         end_day = calendar.monthrange(year, month)[1]
         end_date = f'{year}-{month}-{end_day}'
 
-        sql = f"SELECT * FROM transaction_transaction WHERE date >= '{start_date}' AND '{end_date}' >= date LIMIT 10"
-        # print(sql)
+        
+        
+        if year < 0:
+            sql = f"SELECT * FROM transaction_transaction WHERE MONTH(date) = '{month}' LIMIT 2"
+        else:
+            sql = f"SELECT * FROM transaction_transaction WHERE date >= '{start_date}' AND '{end_date}' >= date LIMIT 10"
+
         cursor.execute(sql)
         transactions = cursor.fetchall()
         grouped_transactions = group(transactions)

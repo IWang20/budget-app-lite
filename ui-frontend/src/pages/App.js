@@ -3,9 +3,56 @@ import axios from "axios";
 import './App.css'
 
 
+const Form = ({transactionData, loading_state}) => {
+  console.log(transactionData);
+
+  if (loading_state === "idle") {
+    <h1>No Data</h1>
+  }
+  else if (loading_state === "fetching") {
+    <h1>Loading</h1>
+  }
+  else {
+    // combine similar transactions and display them, embed them in the form using a hidden input 
+    return (
+      transactionData.map((transaction, index) => {
+        return (
+          <div class="flex-grid" key={index}>
+            <div class="col">
+              <h3>{transaction[2]}</h3>
+              <p>{transaction[1]} </p>
+            </div>
+            <div class="col">
+              <label>
+                <input type="radio" id="dining" name={index}/> dining
+              </label>
+              <label>
+                <input type="radio" id="personal" name={index}/> personal
+              </label>
+              <label>
+                <input type="radio" id="rent/utilities" name={index}/> rent/utilities
+              </label>
+              <label>
+                <input type="radio" id="groceries" name={index}/> groceries
+              </label>
+              <label>
+                <input type="radio" id="transporation" name={index}/> transporation
+              </label>
+              <label>
+                <input type="radio" id="other" name={index}/> other
+              </label>
+            </div>
+          </div>
+        )
+      })
+    )
+  }
+}
+
 const App = () => {
   const [transactions, setTransactions] = useState([]);
-  const [month, setMonth] = useState("");
+  const [loading, setLoading] = useState("idle");
+  // const [month, setMonth] = useState("");
   const [fileName, setFileName] = useState("");
   const [file, setFile] = useState();
 
@@ -26,13 +73,14 @@ const App = () => {
     );
 
     // Details of the uploaded file
-
+    setLoading("fetching");
     const response = await axios.post("http://localhost:8000/upload_pdf/", formData, {headers: {"Content-Type": "multipart/form-data"}});
     // console.log(response);
     console.log(response["data"]["status"]);
     console.log(response["data"]["transactions"]);
 
     setTransactions(response["data"]["transactions"]);
+    setLoading("completed");
     // this.setState({transactions: response.data});
   };
 
@@ -68,7 +116,7 @@ const App = () => {
             jsonObject["category"] = selectedOption.id;
             jsonObject["amount"] = transaction[3];
             sendTransaction(jsonObject);
-            // console.log(index);
+            console.log(index);
             selectedTransactions.add(transaction);
         }
     });
@@ -91,28 +139,10 @@ const App = () => {
         </button>
       </div>
       <div>
-        <form onSubmit={onTransactionSubmit}>
-          {
-            transactions.map((transaction, index) => {
-              return (
-                <div class="flex-grid" key={index}>
-                  <div class="col">
-                    <h3>{transaction[1]} {transaction[2]}</h3>
-                  </div>
-                  <div class="col">
-                    <label>
-                      <input type="radio" id="test1" name={index}/> test1
-                    </label>
-                    <label>
-                      <input type="radio" id="test2" name={index}/> test2
-                    </label>
-                  </div>
-                </div>
-              )
-            })
-          }
-          <button type="submit">Submit</button>
-        </form> 
+      <form onSubmit={onTransactionSubmit}>
+        <Form transactionData={transactions} loading_state={loading}/>
+        <button type="submit">Submit</button>
+      </form>
       </div>
     </div>
   );

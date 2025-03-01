@@ -55,7 +55,7 @@ def extractPattern(transaction: str, billingPeriod):
     splitTrans[1] = splitTrans[1].strip()
     splitTrans[-2] = splitTrans[-2].strip()
     
-    date = convertDateFormat(assignYear(splitTrans[2], billingPeriod))
+    date = assignYear(splitTrans[2], billingPeriod).replace("/", "-")
 
     # remove "authorized" if there is one in the string
     tempType = splitTrans[1].split()
@@ -103,17 +103,20 @@ def extractOtherPattern(transaction: str, billingPeriod):
     type = None
     description = None
     amount = None
-
+    print(transaction)
+    # Is there a match
     if matchstr:
+        # does the transaction have an "on MM/DD/YY" in it?
         if matchstr.group(4): 
-            date = convertDateFormat(matchstr.group(4))
+            date = matchstr.group(4).strip().split("/")
+            date = "-".join(["20" + date[-1], date[0], date[1]])
         else:
-            date = convertDateFormat(assignYear(matchstr.group(1), billingPeriod))
-        
+            date = assignYear(matchstr.group(1), billingPeriod).replace("/", "-")
+
         type = "Bills and Transfers"
         description = removeNoise2(matchstr.group(2))
         amount = matchstr.group(5)
-        # print(date, type, description, amount)
+        print(date, type, description, amount)
     else:
         print(f"extractOtherPattern() Error: '{transaction}'")
     return date, type, description, amount
@@ -205,11 +208,22 @@ def assignYear(date, billingPeriod):
     else:
         return end[2] + "/" + date
 
-def convertDateFormat(date: str):
-    """
-        Change a YYYY/MM/DD to YYYY-MM-DD for MySQL 
-    """
-    return date.replace("/", "-")
+# FIX!!  04/18/24 some dates have the year in the wrong position
+# def convertDateFormat(date: str):
+#     """
+#         Possible date formats:
+#         MM/DD
+#         MM/DD/YY
+#         Convert YYYY-MM-DD for MySQL 
+#     """
+#     for MM/DD/YYYY
+#     if len(date.split("/")[-1]) == 4:
+#         if len(date) == 3:
+#             return datetime.strptime("%m-%d-%Y").date() 
+#         else:
+#             return datetime.strptime("%m-%d-%Y").date() 
+#     else:
+#     return date.replace("/", "-")
 
 
 def clean(text: str, billingPeriod):
@@ -367,8 +381,8 @@ def parseDir(pdfDir: str):
 
 def main():
     # clean(stringifyPdf(directory_path))
-    data, _, _ = parseFile("./pdfs/010824 WellsFargo.pdf")
-
+    data, _, _ = parseFile("./pdfs/050724 WellsFargo.pdf")
+    # print(convertDateFormat("04/18/24"))
 
     # df = pd.DataFrame(transactionData)
     # show(df)

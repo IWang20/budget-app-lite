@@ -1,6 +1,6 @@
 import {React, useState, useEffect} from 'react';
 import axios from "axios";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, LabelList } from "recharts";
+import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, LabelList } from "recharts";
 import './Summary.css'
 
 // const data = [
@@ -25,10 +25,9 @@ const colors = ["#E176C1",
 // ]
 
 // prop passing undefined into loading 
-const Chart = ({transactionData, loading}) => { 
+const Bars = ({transactionData, loading}) => { 
     const transactions = transactionData;
     const uniqueDescriptions = new Set();
-    // const [year, setYear] = useState(yearText);
     console.log(transactions);
     console.log("<Chart/> " + loading);
 
@@ -65,30 +64,7 @@ const Chart = ({transactionData, loading}) => {
                         <XAxis dataKey="month" />
                         <YAxis />
                         <Tooltip />
-
-
-                        // it isn't returing properly
-                        // could it be that the 
-                        // for
-                        //      for 
-                        //              return 
-                        // is messing up because technically its returning twice?
-                        // 
-                        // try getting a list of all the unique transactions, then rendering all the bars at once based on that list of key 
                         {
-                            // transactions.map((dict) => {
-                            //     Object.keys(dict).map((values) => {
-                            //         if (values !== "month") {
-                            //             console.log(values);
-                            //             return (
-                            //                 <Bar dataKey={values} stackId="a" fill="#ffc658">
-                            //                     <LabelList dataKey={values} position="insideTop" fill="#fff" />
-                            //                 </Bar>
-                            //             )
-                            //         }
-                            //     })
-                            // })
-                            
                             [...uniqueDescriptions].map((description, index) => {
                                 console.log(description, index);
                                 return (
@@ -99,30 +75,63 @@ const Chart = ({transactionData, loading}) => {
                                 )
                             })
                         }
-                        {/* <Bar dataKey={"Uber Trip Help.Uber.Com"} stackId="a" fill="#ffc658">
-                            <LabelList dataKey={"Uber Trip Help.Uber.Com"} position="insideTop" fill="#fff" />
-                        </Bar>
-                        <Bar dataKey={"Chipotle Online Chipotle.Com"} stackId="a" fill="#00FF00">
-                            <LabelList dataKey={"Chipotle Online Chipotle.Com"} position="insideTop" fill="#fff" />
-                        </Bar>
-                        <Bar dataKey={"Spotify"} stackId="a" fill="#00FFFF">
-                            <LabelList dataKey={"Spotify"} position="insideTop" fill="#fff" />
-                        </Bar> */}
                     </BarChart>
                 </ResponsiveContainer>
             </div>
         )
     }
-    
-
 }
 
+const Pies = ({transactionData, loading}) => { 
+    const transactions = transactionData;
+    const uniqueDescriptions = new Set();
+    // const [year, setYear] = useState(yearText);
+    console.log(transactions);
+    console.log("<Chart/> " + loading);
 
+    for (const month in transactions) { 
+        for (const key in transactions[month]) {
+            if (key !== "month") {
+                uniqueDescriptions.add(key)
+            }
+        }
+    }
+    console.log(uniqueDescriptions);
+
+    if (loading === "idle") {
+        return (
+            <ResponsiveContainer>
+                <PieChart width={1000} height={1000}>
+                    <Pie data={transactionData} dataKey="amount" nameKey="name" cx="70%" cy="70%" outerRadius={10} fill="#8884d8" />
+                    {/* <Pie data={data02} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#82ca9d" label /> */}
+                </PieChart>
+            </ResponsiveContainer>
+            
+        )
+    }
+    else if (loading === "fetching") {
+        return <p>Loading...</p>;
+    }
+    else if (loading === "completed") {
+        return (
+            <div>
+                <PieChart width={730} height={250}>
+                    <Pie data={transactionData} dataKey="amount" nameKey="name" cx="50%" cy="50%" outerRadius={50} fill="#8884d8" />
+                    {/* <Pie data={data02} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#82ca9d" label /> */}
+                </PieChart>
+            </div>
+        )
+    }
+}
 
 const Summary = () => {
     const [years, setYears] = useState([]);
-    const [dropDownText, setDropDownText] = useState("Select Year");
-    const [transactions, setTransactions] = useState([]);
+    const [currYear, setCurrYear] = useState(-1);
+    const [yearText, setYearText] = useState("Select Year");
+    const [analysisText, setAnalysisText] = useState("Total Transaction Cost");
+    const [barData, setBarData] = useState([]);
+    // const [pieData, setPieData] = useState([]);
+    // const [lineData, setLineData] = useState([]);
     const [loadingStatus, setLoadingStatus] = useState("idle");
 
 
@@ -134,37 +143,84 @@ const Summary = () => {
         getYears();
     }, []);
 
-    // useEffect(() => {
-    //     console.log("render");
-    // }, []);    
+    // get data
+    // pause loading
+    // return all types bar, pie, 
+    //  set them
+    // resume loading
 
-    // useEffect(() => {
-    //     console.log(transactions);
-    // }, [transactions]);
 
-    // set transaction, set dropdown text
-    async function getTransactions(event, year) {
+    // REMEMBER TO GET ALL YEARS DATA, CURRENTLY setBarData(response[data][data]) doesn't work but adding [data][data][year] does for some reason
+    // Takes a grouped data set from /analysis/ 
+    // just look in analysis_type varible, no need to pass it into getTransactions
+    async function getTransactions(event, year, analysis_type) {
         event.preventDefault();
+        // setYearText(year);
+        setAnalysisText(analysis_type);
+        
         setLoadingStatus("fetching");
         const response = await axios.get("/analysis/?type=year-data&year=" + year);
-        var formatted_transactions = []
-        response["data"]["data"][year].map((dict) => {
+        const allData = response["data"]["data"];
+        var barTransactions = [];
+        var pieTransactions = [];
+        
+        console.log(allData);
+        
+        allData[year].map((dict) => {
             var temp = {};
             Object.keys(dict).map((key) => {
-                console.log(dict[key]);
+                // console.log(dict[key]);
                 if (key === "month") {
                     temp["month"] = dict[key];
                 }
                 else {
-                    temp[key] = dict[key][4];
+                    if (analysis_type === "Total Transaction Cost") {
+                        temp[key] = dict[key][4];
+                    }
+                    else if (analysis_type === "Total Transaction Count") {
+                        temp[key] = dict[key][5];
+                    }
+                    else {
+                        console.log("invalid analysis type: " + analysis_type);
+                    }
+                    
                 }
             })
-            formatted_transactions.push(temp);
-        })
-        const grouped_transactions = response["data"]["data"];
-        // why doesn't grouped_transactions work?????
-        setDropDownText(year);
-        setTransactions(formatted_transactions);
+            barTransactions.push(temp);
+        });
+        // console.log(barTransactions);
+        
+        // Pie
+        // var temp = {};
+        // allData[year].map((dict) => {
+        //     Object.keys(dict).map((key) => {
+        //         if (key !== "month") {
+        //             if (!(key in temp)) {
+        //                 temp[key] = [dict[key][4], dict[key][5]];
+        //             }
+        //             else {
+        //                 temp[key][0] += dict[key][4];
+        //                 temp[key][1] += dict[key][5];
+        //                 console.log(temp[key]);
+        //             }
+                    
+        //         }
+        //     })
+        // });
+        // console.log(temp);
+
+        // Object.keys(temp).map((transaction) => {
+        //     var slice = {};
+        //     slice["name"] = transaction;
+        //     slice["amount"] = temp[transaction][0];
+        //     slice["count"] = temp[transaction][1];
+        //     pieTransactions.push(slice);
+        // });
+        // console.log(pieTransactions);
+
+        
+        setBarData(barTransactions);
+        // setPieData(pieTransactions);
         setLoadingStatus("completed");
     }
 
@@ -182,16 +238,27 @@ const Summary = () => {
         <div>
             <h1>Welcome to the Summary Page! :3</h1>
             <div className="dropdown">
-                <button className="dropbtn">{dropDownText}</button>
+                <button className="dropbtn">{yearText}</button>
                 <div className="dropdown-content">
-                    {years.map((year, index) => {
+                    <a href="/" onClick={(event) => {setYearText("All");
+                                                    getTransactions(event, -1, analysisText);}}>All</a>
+                    {years.map((year, index) => { 
                         return (
-                            <a href="/" onClick={(event) => getTransactions(event, year)} key={index}>{year}</a>
+                            <a href="/" onClick={(event) => {setYearText(year);
+                                                            getTransactions(event, year, analysisText);}} key={index}>{year}</a>
                         )
                     })}
                 </div>
             </div>
-            <Chart transactionData={transactions} loading={loadingStatus}/>
+            <div className="dropdown">
+                <button className="dropbtn">{analysisText}</button>
+                <div className="dropdown-content">
+                    <a href="/" onClick={(event) => getTransactions(event, currYear, "Total Transaction Cost")}>Total Transaction Cost</a>
+                    <a href="/" onClick={(event) => getTransactions(event, currYear, "Total Transaction Count")}>Total Transaction Count</a>
+                </div>
+            </div>
+            <Bars transactionData={barData} loading={loadingStatus}/>
+            {/* <Pies transactionData={pieData} loading={loadingStatus}/> */}
         </div>
     )
 };
