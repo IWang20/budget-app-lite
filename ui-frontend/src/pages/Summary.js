@@ -1,6 +1,6 @@
 import {React, useState, useEffect} from 'react';
 import axios from "axios";
-import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, LabelList } from "recharts";
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, LabelList } from "recharts";
 import './Summary.css'
 
 // const data = [
@@ -24,12 +24,13 @@ const colors = ["#E176C1",
 //     {month: "Febuary", "Chipotle Online Chipotle.Com": 9.01, "Spotify": 5.99}
 // ]
 
-// prop passing undefined into loading 
+
+
 const Bars = ({transactionData, loading}) => { 
     const transactions = transactionData;
     const uniqueDescriptions = new Set();
-    console.log(transactions);
-    console.log("<Chart/> " + loading);
+    // console.log(transactions);
+    // console.log("<Chart/> " + loading);
 
     for (const month in transactions) { 
         for (const key in transactions[month]) {
@@ -38,7 +39,7 @@ const Bars = ({transactionData, loading}) => {
             }
         }
     }
-    console.log(uniqueDescriptions);
+    // console.log(uniqueDescriptions);
 
     if (loading === "idle") {
         return (
@@ -84,42 +85,60 @@ const Bars = ({transactionData, loading}) => {
 
 const Pies = ({transactionData, loading}) => { 
     const transactions = transactionData;
-    const uniqueDescriptions = new Set();
-    // const [year, setYear] = useState(yearText);
-    console.log(transactions);
-    console.log("<Chart/> " + loading);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    // console.log(transactions);
+    // console.log("<Chart/> " + loading);
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+    const pie_width = 500;
+    const pie_height = 500;
 
-    for (const month in transactions) { 
-        for (const key in transactions[month]) {
-            if (key !== "month") {
-                uniqueDescriptions.add(key)
-            }
-        }
-    }
-    console.log(uniqueDescriptions);
+    const onPieEnter = (_, index) => {
+        setActiveIndex(index);
+    };
 
     if (loading === "idle") {
         return (
-            <ResponsiveContainer>
-                <PieChart width={1000} height={1000}>
-                    <Pie data={transactionData} dataKey="amount" nameKey="name" cx="70%" cy="70%" outerRadius={10} fill="#8884d8" />
-                    {/* <Pie data={data02} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#82ca9d" label /> */}
-                </PieChart>
-            </ResponsiveContainer>
-            
+            // <PieChart width={pie_width} height={pie_height}>
+            //     <Pie
+            //         data={transactionData}
+            //         dataKey="students"
+            //         outerRadius={250}
+            //         fill="#8884d8"
+            //         onMouseEnter={onPieEnter}
+            //         style={{ cursor: 'pointer', outline: 'none'}}
+            //     >
+            //     {transactionData.map((entry, index) => (
+            //         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            //     ))}
+            //     </Pie>
+            //     <Tooltip/>
+            // </PieChart>
+            <h1>No Data</h1>
         )
     }
     else if (loading === "fetching") {
         return <p>Loading...</p>;
     }
     else if (loading === "completed") {
+        console.log(transactionData);
         return (
-            <div>
-                <PieChart width={730} height={250}>
-                    <Pie data={transactionData} dataKey="amount" nameKey="name" cx="50%" cy="50%" outerRadius={50} fill="#8884d8" />
-                    {/* <Pie data={data02} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#82ca9d" label /> */}
-                </PieChart>
-            </div>
+            <PieChart width={pie_width} height={pie_height}>
+                <Pie
+                    data={transactionData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={250}
+                    fill="#8884d8"
+                    onMouseEnter={onPieEnter}
+                    style={{ cursor: 'pointer', outline: 'none'}}
+                >
+                    <LabelList dataKey="name"/>
+                    {Object.entries(transactionData).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+                </Pie>
+                <Tooltip/>
+            </PieChart>
         )
     }
 }
@@ -127,13 +146,24 @@ const Pies = ({transactionData, loading}) => {
 const Summary = () => {
     const [years, setYears] = useState([]);
     const [currYear, setCurrYear] = useState(-1);
-    const [yearText, setYearText] = useState("Select Year");
+    const [year, setYear] = useState(["Select Year", -1]);
     const [analysisText, setAnalysisText] = useState("Total Transaction Cost");
     const [barData, setBarData] = useState([]);
-    // const [pieData, setPieData] = useState([]);
-    // const [lineData, setLineData] = useState([]);
-    const [loadingStatus, setLoadingStatus] = useState("idle");
+    const [categoryYear, setCategoryYear] = useState(["Select Year", -1]);
+    const [categoryMonth, setCategoryMonth] = useState(["All", -1]);
+    const [categoryAnalysisText, setCategoryAnalysisText] = useState("Total Transaction Cost");
+    const [pieData, setPieData] = useState([]);
+    // const pieDataTemp = null;
+    const [barLoadingStatus, setBarLoadingStatus] = useState("idle");
+    const [pieLoadingStatus, setPieLoadingStatus] = useState("idle");
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
+    const dummypiedata = [
+        { name: 'Geeksforgeeks', students: 400 },
+        { name: 'Technical scripter', students: 700 },
+        { name: 'Geek-i-knack', students: 200 },
+        { name: 'Geek-o-mania', students: 1000 }
+    ];
 
     useEffect(() => {
         const getYears = async() => {
@@ -143,26 +173,20 @@ const Summary = () => {
         getYears();
     }, []);
 
-    // get data
-    // pause loading
-    // return all types bar, pie, 
-    //  set them
-    // resume loading
+    useEffect(() => {
+        getCategories(categoryYear[1], categoryMonth[1], categoryAnalysisText);
+    }, [categoryYear, categoryMonth, categoryAnalysisText]);
 
-
-    // REMEMBER TO GET ALL YEARS DATA, CURRENTLY setBarData(response[data][data]) doesn't work but adding [data][data][year] does for some reason
-    // Takes a grouped data set from /analysis/ 
-    // just look in analysis_type varible, no need to pass it into getTransactions
+    // could add the kind of group by category/transaction 
     async function getTransactions(event, year, analysis_type) {
         event.preventDefault();
-        // setYearText(year);
+        // setYear(year);
         setAnalysisText(analysis_type);
         
-        setLoadingStatus("fetching");
+        setBarLoadingStatus("fetching");
         const response = await axios.get("/analysis/?type=year-data&year=" + year);
         const allData = response["data"]["data"];
         var barTransactions = [];
-        var pieTransactions = [];
         
         console.log(allData);
         
@@ -188,41 +212,42 @@ const Summary = () => {
             })
             barTransactions.push(temp);
         });
-        // console.log(barTransactions);
-        
-        // Pie
-        // var temp = {};
-        // allData[year].map((dict) => {
-        //     Object.keys(dict).map((key) => {
-        //         if (key !== "month") {
-        //             if (!(key in temp)) {
-        //                 temp[key] = [dict[key][4], dict[key][5]];
-        //             }
-        //             else {
-        //                 temp[key][0] += dict[key][4];
-        //                 temp[key][1] += dict[key][5];
-        //                 console.log(temp[key]);
-        //             }
-                    
-        //         }
-        //     })
-        // });
-        // console.log(temp);
-
-        // Object.keys(temp).map((transaction) => {
-        //     var slice = {};
-        //     slice["name"] = transaction;
-        //     slice["amount"] = temp[transaction][0];
-        //     slice["count"] = temp[transaction][1];
-        //     pieTransactions.push(slice);
-        // });
-        // console.log(pieTransactions);
-
-        
         setBarData(barTransactions);
-        // setPieData(pieTransactions);
-        setLoadingStatus("completed");
+        setBarLoadingStatus("completed");
     }
+
+    // pull all data
+    async function getCategories(year, month, analysis_type) {
+        if (analysis_type === "Total Transaction Cost") {
+            analysis_type = "total-cost"
+        }
+        else if (analysis_type === "Total Transaction Count") {
+            analysis_type = "total-count"
+        }
+        else {
+            console.log("invalid analysis type " + analysis_type);
+        }
+
+        const categories = []
+
+        
+        setPieLoadingStatus("fetching");
+        const response = await axios.get("/analysis/?type=category-data&year=" + year + "&month=" + month + "&group-type=" + analysis_type);
+        const allData = response["data"]["transactions"];
+        for (const key in allData) {
+            const temp = {};
+            temp['name'] = key;
+            temp['value'] = allData[key];
+            categories.push(temp);
+        }
+        console.log(categories);
+        setPieData(categories);
+        // regroup everything if it is all years
+        // regroup things anyways, they aren't organized correctly 
+
+        setPieLoadingStatus("completed");
+    }
+
 
     // states
     // 1. idle - on open
@@ -238,13 +263,13 @@ const Summary = () => {
         <div>
             <h1>Welcome to the Summary Page! :3</h1>
             <div className="dropdown">
-                <button className="dropbtn">{yearText}</button>
+                <button className="dropbtn">{year[0]}</button>
                 <div className="dropdown-content">
-                    <a href="/" onClick={(event) => {setYearText("All");
-                                                    getTransactions(event, -1, analysisText);}}>All</a>
+                    <a href="/" onClick={(event) => {setYear(["All", -1]);
+                                                    getTransactions(event, year[1], analysisText);}}>All</a>
                     {years.map((year, index) => { 
                         return (
-                            <a href="/" onClick={(event) => {setYearText(year);
+                            <a href="/" onClick={(event) => {setYear([year, year]);
                                                             getTransactions(event, year, analysisText);}} key={index}>{year}</a>
                         )
                     })}
@@ -253,12 +278,53 @@ const Summary = () => {
             <div className="dropdown">
                 <button className="dropbtn">{analysisText}</button>
                 <div className="dropdown-content">
-                    <a href="/" onClick={(event) => getTransactions(event, currYear, "Total Transaction Cost")}>Total Transaction Cost</a>
+                    <a href="/" onClick={(event) => {getTransactions(event, currYear, "Total Transaction Cost")}}>Total Transaction Cost</a>
                     <a href="/" onClick={(event) => getTransactions(event, currYear, "Total Transaction Count")}>Total Transaction Count</a>
                 </div>
             </div>
-            <Bars transactionData={barData} loading={loadingStatus}/>
-            {/* <Pies transactionData={pieData} loading={loadingStatus}/> */}
+            <Bars transactionData={barData} loading={barLoadingStatus}/>
+            <div className="dropdown">
+                <button className="dropbtn">{categoryYear[0]}</button>
+                <div className="dropdown-content">
+
+                    {/* CREATE A VARIABLE THAT STORES THE TEXT/INDEX FOR MONTH TO PASS INTO THE CATEGORIES FUNCTION */}
+                    <a href="/" onClick={(event) => {event.preventDefault();
+                                                    setCategoryYear(["All", -1]);}}>All</a>
+                    {years.map((year, index) => { 
+                        return (
+                            <a href="/" onClick={(event) => {setCategoryYear([year, year]);
+                                                            event.preventDefault();}} key={index}>{year}</a>
+                        )
+                    })}
+                </div>
+            </div>
+            <div className="dropdown">
+                <button className="dropbtn">{categoryMonth[0]}</button>
+                <div className="dropdown-content">
+                    <a href="/" onClick={(event) => {setCategoryMonth(["All", -1]);
+                                                    event.preventDefault();}}>All</a>
+                    {
+                        
+                        Array.from({length:12}, (value, index) => index).map((index) => {
+                            // console.log(index);
+                            return (
+                                <a href="/" onClick={(event) => {setCategoryMonth([months[index], index+1]);
+                                                                event.preventDefault();}}>{months[index]}</a>
+                            );
+                        })
+                    }
+                </div>
+            </div>
+            <div className="dropdown">
+                <button className="dropbtn">{categoryAnalysisText}</button>
+                <div className="dropdown-content">
+                    <a href="/" onClick={(event) => {setCategoryAnalysisText("Total Transaction Cost");
+                                                    event.preventDefault();}}>Total Transaction Cost</a>
+                    <a href="/" onClick={(event) => {setCategoryAnalysisText("Total Transaction Count");
+                                                    event.preventDefault();}}>Total Transaction Count</a>
+                </div>
+            </div>
+            <Pies transactionData={pieData} loading={pieLoadingStatus}/>
         </div>
     )
 };
